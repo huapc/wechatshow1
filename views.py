@@ -1,6 +1,6 @@
 from flask import request, jsonify, abort
 from app import app, db
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, union
 from models import *
 import requests
 import hashlib
@@ -75,14 +75,64 @@ def search_tag():
 
 @app.route('/kol-list')
 def kollist():
-    sex1 = request.args.get('sex1','女')
-    sex2 = request.args.get('sex2','女')
+    args_dict = request.args.to_dict()
+    for k,v in args_dict.items():
+        print(k,v)
+    if args_dict:
+        #基础合集
+        kol_all = KolList.query.filter(KolList.sex == '').limit(100)
+        for k, v in args_dict.items():
+            if k in ['sex1','sex2']:
+                kols = KolList.query.filter(KolList.sex == v).order_by(KolList.follower_num.desc()).limit(100)
+            if k in ['美女','汽车知识','舞蹈']:
+                kols = KolList.query.filter(KolList.tag == v).order_by(KolList.follower_num.desc()).limit(100)
+            if k in ['500-5000', '100-500','10-100','0-10']:
+                min_max = v.split('-')
+                min = int(min_max[0])
+                max = int(min_max[1])
+                kols = KolList.query.filter(and_(KolList.follower_num > min * 10000, KolList.follower_num <= max * 10000)).order_by(KolList.follower_num.desc()).limit(100)
+            if k in ['one_city', 'two_city', 'three_city']:
+                kols = KolList.query.order_by(KolList.phone_age_info.one_city).limit(100)
+            kol_all = kol_all.union(kols)
+        kol_all = kol_all.order_by(KolList.follower_num.desc()).limit(100).all()
+        data = []
+        for kol in kol_all:
+            info = {'userid': kol.userid, "nickname": kol.nickname, "sex": kol.sex,
+                    "follower_num": kol.follower_num, "age": kol.age, "tag": kol.tag,
+                    "video_count": kol.video_count,
+                    "cooperate_index": kol.cooperate_index, "douyin_id": kol.douyin_id,
+                    "growth_index": kol.growth_index, "spread_index": kol.spread_index,
+                    "total_video_count": kol.fans_attribute.total_video_count, "cp_index": kol.cp_index,
+                    "star_map_index": kol.star_map_index, "shopping_index": kol.shopping_index}
+            data.append(info)
+        res = ResMsg()
+        res.update(data=data)
+        return jsonify(res.data)
+    else:
+        #默认查询
+        kols = KolList.query.order_by(KolList.follower_num.desc()).limit(100).all()
+        data = []
+        for kol in kols:
+            info = {'userid': kol.userid, "nickname": kol.nickname, "sex": kol.sex,
+                    "follower_num": kol.follower_num, "age": kol.age, "tag": kol.tag,
+                    "video_count": kol.video_count,
+                    "cooperate_index": kol.cooperate_index, "douyin_id": kol.douyin_id,
+                    "growth_index": kol.growth_index, "spread_index": kol.spread_index,
+                    "total_video_count": kol.fans_attribute.total_video_count, "cp_index": kol.cp_index,
+                    "star_map_index": kol.star_map_index, "shopping_index": kol.shopping_index}
+            data.append(info)
+        res = ResMsg()
+        res.update(data=data)
+        return jsonify(res.data)
 
-    follower_num1 = request.args.get('follower_num1','3000-8000')
-    follower_num2 = request.args.get('follower_num2','3000-8000')
-    follower_num3 = request.args.get('follower_num3', '3000-8000')
-    follower_num4 = request.args.get('follower_num4', '3000-8000')
-    follower_num5 = request.args.get('follower_num5', '3000-8000')
+    sex1 = request.args.get('sex1')
+    sex2 = request.args.get('sex2')
+
+    follower_num1 = request.args.get('follower_num1')
+    follower_num2 = request.args.get('follower_num2')
+    follower_num3 = request.args.get('follower_num3')
+    follower_num4 = request.args.get('follower_num4')
+    follower_num5 = request.args.get('follower_num5')
     min_max1 = follower_num1.split('-')
     min1 = int(min_max1[0])
     max1 = int(min_max1[1])
@@ -99,26 +149,40 @@ def kollist():
     min5 = int(min_max5[0])
     max5 = int(min_max5[1])
 
-    tag1 = request.args.get('tag1', '美女')
-    tag2 = request.args.get('tag2', '美女')
-    tag3 = request.args.get('tag3', '美女')
-    tag4 = request.args.get('tag4', '美女')
-    tag5 = request.args.get('tag5', '美女')
-    tag6 = request.args.get('tag6', '美女')
-    tag7 = request.args.get('tag7', '美女')
-    tag8 = request.args.get('tag8', '美女')
-    tag9 = request.args.get('tag9', '美女')
-    tag10 = request.args.get('tag10', '美女')
-    tag11 = request.args.get('tag11', '美女')
-    tag12 = request.args.get('tag12', '美女')
-    tag13 = request.args.get('tag13', '美女')
-    tag14 = request.args.get('tag14', '美女')
+    tag1 = request.args.get('tag1')
+    tag2 = request.args.get('tag2')
+    tag3 = request.args.get('tag3')
+    tag4 = request.args.get('tag4')
+    tag5 = request.args.get('tag5')
+    tag6 = request.args.get('tag6')
+    tag7 = request.args.get('tag7')
+    tag8 = request.args.get('tag8')
+    tag9 = request.args.get('tag9')
+    tag10 = request.args.get('tag10')
+    tag11 = request.args.get('tag11')
+    tag12 = request.args.get('tag12')
+    tag13 = request.args.get('tag13')
+    tag14 = request.args.get('tag14')
 
-    fans_age = request.args.get('fans_age')
-    fans_phone = request.args.get('fans_phone')
-    fans_city = request.args.get('fans_city')
+    """
+    fans_age1 = request.args.get('fans_age1')
+    fans_age2 = request.args.get('fans_age2')
+    fans_age3 = request.args.get('fans_age3')
+    fans_age4 = request.args.get('fans_age4')
+    fans_age5 = request.args.get('fans_age5')
+    fans_age6 = request.args.get('fans_age6')
 
-    '''
+    fans_phone1 = request.args.get('fans_phone1')
+    fans_phone2 = request.args.get('fans_phone2')
+    fans_phone3 = request.args.get('fans_phone3')
+    fans_phone4 = request.args.get('fans_phone4')
+    fans_phone5 = request.args.get('fans_phone5')
+
+    fans_city1 = request.args.get('fans_city1')
+    fans_city2 = request.args.get('fans_city2')
+    fans_city3 = request.args.get('fans_city3')
+
+
     age_min_max1 = fans_age1.split('-')
     age_min1 = int(age_min_max1[0])
     age_max1 = int(age_min_max1[1])
@@ -137,7 +201,7 @@ def kollist():
     age_min_max6 = fans_age6.split('-')
     age_min6 = int(age_min_max6[0])
     age_max6 = int(age_min_max6[1])
-    '''
+
 
     task_filter = [
         or_(
@@ -181,101 +245,47 @@ def kollist():
             KolList.tag == tag13,
             KolList.tag == tag13,
             KolList.tag == tag14
-        )
+        ),
     ]
     kols = KolList.query.filter(*task_filter).order_by(KolList.follower_num.desc()).limit(100).all()
-    if fans_age is not None:
-        # '0-18','18-25','26-32','33-39','40-46','46-80'
-        if fans_age == '0-18':
-            kols_fans = db.session.query(KolList).join(PhoneAgeInfo, KolList.userid == PhoneAgeInfo.userid).filter(and_(*task_filter)).order_by(PhoneAgeInfo.less_18).limit(100).all()
-            data = []
-            for kol in kols_fans:
-                info = {'userid': kol.userid, "nickname": kol.nickname, "sex": kol.sex,
-                        "follower_num": kol.follower_num, "age": kol.age, "tag": kol.tag,
-                        "video_count": kol.video_count,
-                        "cooperate_index": kol.cooperate_index, "douyin_id": kol.douyin_id,
-                        "growth_index": kol.growth_index, "spread_index": kol.spread_index,
-                        "total_video_count": kol.fans_attribute.total_video_count, "cp_index": kol.cp_index,
-                        "star_map_index": kol.star_map_index, "shopping_index": kol.shopping_index}
-                data.append(info)
-            res = ResMsg()
-            res.update(data=data)
-            return jsonify(res.data)
-        if fans_age =='18-25':
-            kols_fans = db.session.query(KolList).join(PhoneAgeInfo, KolList.userid == PhoneAgeInfo.userid).filter(and_(*task_filter)).order_by(PhoneAgeInfo.age_18_25).limit(100).all()
-            data = []
-            for kol in kols_fans:
-                info = {'userid': kol.userid, "nickname": kol.nickname, "sex": kol.sex,
-                        "follower_num": kol.follower_num, "age": kol.age, "tag": kol.tag,
-                        "video_count": kol.video_count,
-                        "cooperate_index": kol.cooperate_index, "douyin_id": kol.douyin_id,
-                        "growth_index": kol.growth_index, "spread_index": kol.spread_index,
-                        "total_video_count": kol.fans_attribute.total_video_count, "cp_index": kol.cp_index,
-                        "star_map_index": kol.star_map_index, "shopping_index": kol.shopping_index}
-                data.append(info)
-            res = ResMsg()
-            res.update(data=data)
-            return jsonify(res.data)
-        if fans_age == '26-32':
-            kols_fans = db.session.query(KolList).join(PhoneAgeInfo, KolList.userid == PhoneAgeInfo.userid).filter(and_(*task_filter)).order_by(PhoneAgeInfo.age_26_32).limit(100).all()
-            data = []
-            for kol in kols_fans:
-                info = {'userid': kol.userid, "nickname": kol.nickname, "sex": kol.sex,
-                        "follower_num": kol.follower_num, "age": kol.age, "tag": kol.tag,
-                        "video_count": kol.video_count,
-                        "cooperate_index": kol.cooperate_index, "douyin_id": kol.douyin_id,
-                        "growth_index": kol.growth_index, "spread_index": kol.spread_index,
-                        "total_video_count": kol.fans_attribute.total_video_count, "cp_index": kol.cp_index,
-                        "star_map_index": kol.star_map_index, "shopping_index": kol.shopping_index}
-                data.append(info)
-            res = ResMsg()
-            res.update(data=data)
-            return jsonify(res.data)
-        if fans_age == '33-39':
-            kols_fans = db.session.query(KolList).join(PhoneAgeInfo, KolList.userid == PhoneAgeInfo.userid).filter(and_(*task_filter)).order_by(PhoneAgeInfo.age_33_39).limit(100).all()
-            data = []
-            for kol in kols_fans:
-                info = {'userid': kol.userid, "nickname": kol.nickname, "sex": kol.sex,
-                        "follower_num": kol.follower_num, "age": kol.age, "tag": kol.tag,
-                        "video_count": kol.video_count,
-                        "cooperate_index": kol.cooperate_index, "douyin_id": kol.douyin_id,
-                        "growth_index": kol.growth_index, "spread_index": kol.spread_index,
-                        "total_video_count": kol.fans_attribute.total_video_count, "cp_index": kol.cp_index,
-                        "star_map_index": kol.star_map_index, "shopping_index": kol.shopping_index}
-                data.append(info)
-            res = ResMsg()
-            res.update(data=data)
-            return jsonify(res.data)
-        if fans_age == '40-46':
-            kols_fans = db.session.query(KolList).join(PhoneAgeInfo, KolList.userid == PhoneAgeInfo.userid).filter(and_(*task_filter)).order_by(PhoneAgeInfo.age_40_46).limit(100).all()
-            data = []
-            for kol in kols_fans:
-                info = {'userid': kol.userid, "nickname": kol.nickname, "sex": kol.sex,
-                        "follower_num": kol.follower_num, "age": kol.age, "tag": kol.tag,
-                        "video_count": kol.video_count,
-                        "cooperate_index": kol.cooperate_index, "douyin_id": kol.douyin_id,
-                        "growth_index": kol.growth_index, "spread_index": kol.spread_index,
-                        "total_video_count": kol.fans_attribute.total_video_count, "cp_index": kol.cp_index,
-                        "star_map_index": kol.star_map_index, "shopping_index": kol.shopping_index}
-                data.append(info)
-            res = ResMsg()
-            res.update(data=data)
-            return jsonify(res.data)
-        if fans_age == '46-80':
-            kols_fans = db.session.query(KolList).join(PhoneAgeInfo, KolList.userid == PhoneAgeInfo.userid).filter(and_(*task_filter)).order_by(PhoneAgeInfo.greater_46).limit(100).all()
-            data = []
-            for kol in kols_fans:
-                info = {'userid': kol.userid, "nickname": kol.nickname, "sex": kol.sex,
-                        "follower_num": kol.follower_num, "age": kol.age, "tag": kol.tag,
-                        "video_count": kol.video_count,
-                        "cooperate_index": kol.cooperate_index, "douyin_id": kol.douyin_id,
-                        "growth_index": kol.growth_index, "spread_index": kol.spread_index,
-                        "total_video_count": kol.fans_attribute.total_video_count, "cp_index": kol.cp_index,
-                        "star_map_index": kol.star_map_index, "shopping_index": kol.shopping_index}
-                data.append(info)
-            res = ResMsg()
-            res.update(data=data)
-            return jsonify(res.data)
+    # '0-18','18-25','26-32','33-39','40-46','46-80'
+    fans_ages = [fans_age1,fans_age2,fans_age3,fans_age4,fans_age5,fans_age6]
+    kols_fans_all = db.session.query(KolList).join(PhoneAgeInfo, KolList.userid == PhoneAgeInfo.userid).filter(and_(*task_filter)).order_by(PhoneAgeInfo.age_18_25)
+    for fans_age in fans_ages:
+        if fans_age:
+            if fans_age == '0-18':
+                kols_fans = db.session.query(KolList).join(PhoneAgeInfo, KolList.userid == PhoneAgeInfo.userid).filter(and_(*task_filter)).order_by(PhoneAgeInfo.age_18_25)
+                kols_fans_all.union(kols_fans)
+            if fans_age == '18-25':
+                kols_fans = db.session.query(KolList).join(PhoneAgeInfo, KolList.userid == PhoneAgeInfo.userid).filter(and_(*task_filter)).order_by(PhoneAgeInfo.age_18_25)
+                kols_fans_all.union(kols_fans)
+            if fans_age == '26-32':
+                kols_fans = db.session.query(KolList).join(PhoneAgeInfo, KolList.userid == PhoneAgeInfo.userid).filter(and_(*task_filter)).order_by(PhoneAgeInfo.age_26_32)
+                kols_fans_all.union(kols_fans)
+            if fans_age == '33-39':
+                kols_fans = db.session.query(KolList).join(PhoneAgeInfo, KolList.userid == PhoneAgeInfo.userid).filter(and_(*task_filter)).order_by(PhoneAgeInfo.age_33_39)
+                kols_fans_all.union(kols_fans)
+            if fans_age == '40-46':
+                kols_fans = db.session.query(KolList).join(PhoneAgeInfo, KolList.userid == PhoneAgeInfo.userid).filter(and_(*task_filter)).order_by(PhoneAgeInfo.age_40_46)
+                kols_fans_all.union(kols_fans)
+            if fans_age == '46-80':
+                kols_fans = db.session.query(KolList).join(PhoneAgeInfo, KolList.userid == PhoneAgeInfo.userid).filter(and_(*task_filter)).order_by(PhoneAgeInfo.greater_46)
+                kols_fans_all.union(kols_fans)
+    data = []
+    kols_fans_all = kols_fans.order_by().limit(100).all()
+    print()
+    for kol in kols_fans_all:
+        info = {'userid': kol.userid, "nickname": kol.nickname, "sex": kol.sex,
+                "follower_num": kol.follower_num, "age": kol.age, "tag": kol.tag,
+                "video_count": kol.video_count,
+                "cooperate_index": kol.cooperate_index, "douyin_id": kol.douyin_id,
+                "growth_index": kol.growth_index, "spread_index": kol.spread_index,
+                "total_video_count": kol.fans_attribute.total_video_count, "cp_index": kol.cp_index,
+                "star_map_index": kol.star_map_index, "shopping_index": kol.shopping_index}
+        data.append(info)
+    res = ResMsg()
+    res.update(data=data)
+    return jsonify(res.data)
 
     if fans_phone is not None:
         if fans_phone == '苹果':
@@ -418,15 +428,21 @@ def kollist():
             res = ResMsg()
             res.update(data=data)
             return jsonify(res.data)
+
     data = []
     for kol in kols:
         info = {'userid': kol.userid,"nickname": kol.nickname,"sex":kol.sex,"follower_num": kol.follower_num, "age": kol.age, "tag": kol.tag,"video_count":kol.video_count,
                 "cooperate_index":kol.cooperate_index,"douyin_id":kol.douyin_id,"growth_index":kol.growth_index,"spread_index":kol.spread_index,
-                "total_video_count":kol.fans_attribute.total_video_count,"cp_index":kol.cp_index,"star_map_index":kol.star_map_index,"shopping_index":kol.shopping_index}
+                "total_video_count":kol.fans_attribute.total_video_count,"cp_index":kol.cp_index,"star_map_index":kol.star_map_index,"shopping_index":kol.shopping_index,
+                'iPhone':kol.phone_age_info.iPhone,'OPPO':kol.phone_age_info.OPPO,'vivo':kol.phone_age_info.vivo,'huawei':kol.phone_age_info.huawei,'xiaomi':kol.phone_age_info.xiaomi,
+                'others':kol.phone_age_info.others,'less_18':kol.phone_age_info.less_18,'age_18_25':kol.phone_age_info.age_18_25,'age_26_32':kol.phone_age_info.age_26_32,
+                'age_33_39':kol.phone_age_info.age_33_39,'age_40_46':kol.phone_age_info.age_40_46,'greater_46':kol.phone_age_info.greater_46,
+                'one_city':int(kol.phone_age_info.one_city),'two_city':int(kol.phone_age_info.two_city),'three_city':int(kol.phone_age_info.three_city)}
         data.append(info)
     res = ResMsg()
     res.update(data=data)
     return jsonify(res.data)
+    """
 
 @app.route('/kol-detail')
 def kol_detail():

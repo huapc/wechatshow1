@@ -462,3 +462,11 @@ class Basic(db.Model):
     time = db.Column(db.Date)
     basic = db.Column(db.TEXT)
 
+class Permission(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    url = db.Column(db.String(255), comment='允许访问的url')
+    title = db.Column(db.String(20), comment='权限简介')
+
+class Role(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(20), comment='角色简介')
