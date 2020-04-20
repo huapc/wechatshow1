@@ -93,6 +93,7 @@ def kollist():
                 kols = KolList.query.filter(and_(KolList.follower_num > min * 10000, KolList.follower_num <= max * 10000)).order_by(KolList.follower_num.desc()).limit(100)
             if k in ['one_city', 'two_city', 'three_city']:
                 kols = KolList.query.order_by(KolList.phone_age_info.one_city).limit(100)
+                ############
             kol_all = kol_all.union(kols)
         kol_all = kol_all.order_by(KolList.follower_num.desc()).limit(100).all()
         data = []
