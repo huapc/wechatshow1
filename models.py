@@ -1,4 +1,5 @@
 from app import db
+import datetime
 
 class User(db.Model):
     """
@@ -19,9 +20,18 @@ class User(db.Model):
     shopurl = db.Column(db.String(255), nullable=True,comment='店铺URL')
     memo = db.Column(db.String(255), nullable=True,comment='备忘录')
     expiredate = db.Column(db.Date, nullable=True, comment='有效期')
-    signdate = db.Column(db.Date, nullable=True,comment='注册会员日期')
+    signdate = db.Column(db.Date, default=datetime.date.today ,nullable=True,comment='注册会员日期')
+    audit = db.Column(db.Integer, default=0,comment='是否提交主管审核:1 true , 0 false')
     ismember = db.Column(db.Integer, default=0,comment='是不是会员')
     ywyname = db.Column(db.String(255), nullable=True,comment='业务员姓名')
+    kol_tag1 = db.Column(db.String(20), comment='允许查看标签')
+    kol_tag2 = db.Column(db.String(20), comment='允许查看标签')
+    kol_tag3 = db.Column(db.String(20), comment='允许查看标签')
+    name = db.Column(db.String(20), comment='客户姓名')
+    supplier = db.Column(db.String(30), comment='供应商')
+    shop = db.Column(db.String(50), comment='店铺名')
+    tag_update_time = db.Column(db.DateTime, default=datetime.datetime.now,comment='标签修改时间')
+    update_num = db.Column(db.Integer, default=0,comment='修改次数')
 
 class Cmm0(db.Model):
     __tablename__ = 'cmm_0'
@@ -300,6 +310,7 @@ class Header(db.Model):
     shop_name = db.Column(db.String(30), comment='淘宝店铺名称')
     douyin_conversion_rate = db.Column(db.Float, comment='昨日抖音转化率')
     month_conversion_rate = db.Column(db.Float, comment='近30日抖音转化率')
+    star_list = db.Column(db.Text, comment='热推达人')
 
 class KolList(db.Model):
 
@@ -338,7 +349,7 @@ class FansAttribute(db.Model):
     total_video_avg_interaction = db.Column(db.Float(asdecimal=True), comment='累计作品平均互动量')
     avg_interaction_15 = db.Column(db.Float(asdecimal=True), comment='近15天平均互动量')
     avg_interaction_30 = db.Column(db.Float(asdecimal=True), comment='近30天平均互动量')
-    #avatar = db.Column(db.String(255), comment='达人头像')
+    avatar = db.Column(db.String(255), comment='达人头像')
 
     kol = db.relationship('KolList')
 

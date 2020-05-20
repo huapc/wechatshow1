@@ -1,5 +1,5 @@
 class ResponseCode():
-    SUCCESS = 200 #成功
+    SUCCESS = 20000 #成功
     FAIL = 500 #失败
     NO_RESOURCE_FOUND = 40001  # 未找到资源
     INVALID_PARAMETER = 40002  # 参数无效
